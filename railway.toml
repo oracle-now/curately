@@ -10,7 +10,7 @@
     buildCommand = "npm install && npm run build"
 
   [services.deploy]
-    startCommand = "npm run start"
+    startCommand = "npx prisma migrate deploy && npm run start"
     healthcheckPath = "/health"
     healthcheckTimeout = 30
     restartPolicyType = "on_failure"
