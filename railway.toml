@@ -1,64 +1,11 @@
+# railway.toml — root-level fallback only
+# Each service should be configured in the Railway dashboard with its own Root Directory.
+#
+# Service setup in Railway dashboard:
+#   api              → Root Directory: apps/api    | Build: npm install && npm run build | Start: npx prisma migrate deploy && npm run start
+#   web              → Root Directory: apps/web    | Build: npm install && npm run build | Start: npm run start
+#   ingestion-worker → Root Directory: apps/api    | Build: npm install && npm run build | Start: node dist/workers/ingestion.worker.js
+#   publish-worker   → Root Directory: apps/api    | Build: npm install && npm run build | Start: node dist/workers/publish.worker.js
+
 [build]
   builder = "nixpacks"
-
-# ── API Service ──────────────────────────────────────────────────────────────
-[[services]]
-  name = "api"
-  root = "apps/api"
-
-  [services.build]
-    buildCommand = "npm install && npm run build"
-
-  [services.deploy]
-    startCommand = "npx prisma migrate deploy && npm run start"
-    healthcheckPath = "/health"
-    healthcheckTimeout = 30
-    restartPolicyType = "on_failure"
-    restartPolicyMaxRetries = 3
-
-  [[services.variables]]
-    name = "PORT"
-    defaultValue = "3001"
-
-# ── Web Service ───────────────────────────────────────────────────────────────
-[[services]]
-  name = "web"
-  root = "apps/web"
-
-  [services.build]
-    buildCommand = "npm install && npm run build"
-
-  [services.deploy]
-    startCommand = "npm run start"
-    healthcheckPath = "/"
-    healthcheckTimeout = 30
-    restartPolicyType = "on_failure"
-    restartPolicyMaxRetries = 3
-
-  [[services.variables]]
-    name = "PORT"
-    defaultValue = "3000"
-
-# ── Ingestion Worker ──────────────────────────────────────────────────────────
-[[services]]
-  name = "ingestion-worker"
-  root = "apps/api"
-
-  [services.build]
-    buildCommand = "npm install && npm run build"
-
-  [services.deploy]
-    startCommand = "node dist/workers/ingestion.worker.js"
-    restartPolicyType = "always"
-
-# ── Publish Worker ────────────────────────────────────────────────────────────
-[[services]]
-  name = "publish-worker"
-  root = "apps/api"
-
-  [services.build]
-    buildCommand = "npm install && npm run build"
-
-  [services.deploy]
-    startCommand = "node dist/workers/publish.worker.js"
-    restartPolicyType = "always"
