@@ -1,0 +1,13 @@
+{
+  "name": "@curately/shared",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./src/types/index.ts",
+  "types": "./src/types/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

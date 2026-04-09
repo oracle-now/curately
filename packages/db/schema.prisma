@@ -33,10 +33,10 @@ model InstagramAccount {
   accessToken     String    @map("access_token")
   tokenExpiresAt  DateTime  @map("token_expires_at")
   createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")  // added: required for token refresh logic
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  postJobs  PostJob[]
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postJobs   PostJob[]
   rateLimits ApiRateLimit[]
 
   @@map("instagram_accounts")
@@ -91,20 +91,20 @@ model CaptionProfile {
 }
 
 model QueueItem {
-  id                String          @id @default(uuid())
-  userId            String          @map("user_id")
-  postCandidateId   String          @map("post_candidate_id")
-  captionProfileId  String?         @map("caption_profile_id")
-  status            String          @default("queued")
-  captionText       String?         @map("caption_text")
-  hashtags          Json?           // string[]
-  scheduledAt       DateTime?       @map("scheduled_at")
-  errorMessage      String?         @map("error_message")
-  createdAt         DateTime        @default(now()) @map("created_at")
-  updatedAt         DateTime        @updatedAt @map("updated_at")
+  id                String    @id @default(uuid())
+  userId            String    @map("user_id")
+  postCandidateId   String    @map("post_candidate_id")
+  captionProfileId  String?   @map("caption_profile_id")
+  status            String    @default("queued")
+  captionText       String?   @map("caption_text")
+  hashtags          Json?     // string[]
+  scheduledAt       DateTime? @map("scheduled_at")
+  errorMessage      String?   @map("error_message")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  postCandidate  PostCandidate  @relation(fields: [postCandidateId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postCandidate  PostCandidate   @relation(fields: [postCandidateId], references: [id], onDelete: Cascade)
   captionProfile CaptionProfile? @relation(fields: [captionProfileId], references: [id])
   postJobs       PostJob[]
 
@@ -123,7 +123,7 @@ model PostJob {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  queueItem       QueueItem        @relation(fields: [queueItemId], references: [id], onDelete: Cascade)
+  queueItem        QueueItem        @relation(fields: [queueItemId], references: [id], onDelete: Cascade)
   instagramAccount InstagramAccount @relation(fields: [igAccountId], references: [id])
 
   @@map("post_jobs")
