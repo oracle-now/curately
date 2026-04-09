@@ -1,0 +1,20 @@
+{
+  "name": "curately",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=apps/web\" \"npm run dev --workspace=apps/api\"",
+    "build": "npm run build --workspaces",
+    "db:migrate": "npm run migrate --workspace=packages/db",
+    "db:generate": "npm run generate --workspace=packages/db",
+    "lint": "npm run lint --workspaces",
+    "typecheck": "npm run typecheck --workspaces"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5"
+  }
+}

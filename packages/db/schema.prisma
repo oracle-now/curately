@@ -1,0 +1,142 @@
+// Prisma schema for Curately
+// Run: npx prisma migrate dev
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  instagramAccounts InstagramAccount[]
+  sources           Source[]
+  postCandidates    PostCandidate[]
+  captionProfiles   CaptionProfile[]
+  queueItems        QueueItem[]
+
+  @@map("users")
+}
+
+model InstagramAccount {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  igUserId        String    @unique @map("ig_user_id")
+  accessToken     String    @map("access_token")
+  tokenExpiresAt  DateTime  @map("token_expires_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postJobs  PostJob[]
+  rateLimits ApiRateLimit[]
+
+  @@map("instagram_accounts")
+}
+
+model Source {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  type         String    // 'instagram' | 'tumblr' | 'hashtag'
+  value        String
+  rssUrl       String    @map("rss_url")
+  active       Boolean   @default(true)
+  lastSyncedAt DateTime? @map("last_synced_at")
+  isStale      Boolean   @default(false) @map("is_stale")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postCandidates PostCandidate[]
+
+  @@map("sources")
+}
+
+model PostCandidate {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  sourceId        String    @map("source_id")
+  externalId      String    @map("external_id")
+  mediaUrls       Json      @map("media_urls")
+  originalCaption String?   @map("original_caption")
+  takenAt         DateTime? @map("taken_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source     Source      @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  queueItems QueueItem[]
+
+  @@unique([userId, sourceId, externalId])
+  @@map("post_candidates")
+}
+
+model CaptionProfile {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String
+  styleConfig Json     @map("style_config")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  queueItems QueueItem[]
+
+  @@map("caption_profiles")
+}
+
+model QueueItem {
+  id                String          @id @default(uuid())
+  userId            String          @map("user_id")
+  postCandidateId   String          @map("post_candidate_id")
+  captionProfileId  String?         @map("caption_profile_id")
+  status            String          @default("queued")
+  captionText       String?         @map("caption_text")
+  hashtags          Json?           // string[]
+  scheduledAt       DateTime?       @map("scheduled_at")
+  errorMessage      String?         @map("error_message")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postCandidate  PostCandidate  @relation(fields: [postCandidateId], references: [id], onDelete: Cascade)
+  captionProfile CaptionProfile? @relation(fields: [captionProfileId], references: [id])
+  postJobs       PostJob[]
+
+  @@map("queue_items")
+}
+
+model PostJob {
+  id              String    @id @default(uuid())
+  queueItemId     String    @map("queue_item_id")
+  igAccountId     String    @map("ig_account_id")
+  scheduledAt     DateTime  @map("scheduled_at")
+  lastAttemptAt   DateTime? @map("last_attempt_at")
+  attemptCount    Int       @default(0) @map("attempt_count")
+  status          String    @default("pending")
+  igMediaId       String?   @map("ig_media_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  queueItem       QueueItem        @relation(fields: [queueItemId], references: [id], onDelete: Cascade)
+  instagramAccount InstagramAccount @relation(fields: [igAccountId], references: [id])
+
+  @@map("post_jobs")
+}
+
+model ApiRateLimit {
+  id            String   @id @default(uuid())
+  igAccountId   String   @map("ig_account_id")
+  callCount     Int      @default(0) @map("call_count")
+  windowStart   DateTime @map("window_start")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  instagramAccount InstagramAccount @relation(fields: [igAccountId], references: [id])
+
+  @@map("api_rate_limits")
+}
