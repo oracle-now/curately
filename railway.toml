@@ -1,0 +1,64 @@
+[build]
+  builder = "nixpacks"
+
+# ── API Service ──────────────────────────────────────────────────────────────
+[[services]]
+  name = "api"
+  root = "apps/api"
+
+  [services.build]
+    buildCommand = "npm install && npm run build"
+
+  [services.deploy]
+    startCommand = "npm run start"
+    healthcheckPath = "/health"
+    healthcheckTimeout = 30
+    restartPolicyType = "on_failure"
+    restartPolicyMaxRetries = 3
+
+  [[services.variables]]
+    name = "PORT"
+    defaultValue = "3001"
+
+# ── Web Service ───────────────────────────────────────────────────────────────
+[[services]]
+  name = "web"
+  root = "apps/web"
+
+  [services.build]
+    buildCommand = "npm install && npm run build"
+
+  [services.deploy]
+    startCommand = "npm run start"
+    healthcheckPath = "/"
+    healthcheckTimeout = 30
+    restartPolicyType = "on_failure"
+    restartPolicyMaxRetries = 3
+
+  [[services.variables]]
+    name = "PORT"
+    defaultValue = "3000"
+
+# ── Ingestion Worker ──────────────────────────────────────────────────────────
+[[services]]
+  name = "ingestion-worker"
+  root = "apps/api"
+
+  [services.build]
+    buildCommand = "npm install && npm run build"
+
+  [services.deploy]
+    startCommand = "node dist/workers/ingestion.worker.js"
+    restartPolicyType = "always"
+
+# ── Publish Worker ────────────────────────────────────────────────────────────
+[[services]]
+  name = "publish-worker"
+  root = "apps/api"
+
+  [services.build]
+    buildCommand = "npm install && npm run build"
+
+  [services.deploy]
+    startCommand = "node dist/workers/publish.worker.js"
+    restartPolicyType = "always"
