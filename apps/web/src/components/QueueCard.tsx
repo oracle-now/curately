@@ -117,7 +117,7 @@ export default function QueueCard({ item, onUpdate, onRemove }: Props) {
         )}
 
         {/* Hashtags */}
-        {item.hashtags?.length > 0 && (
+        {(item.hashtags ?? []).length > 0 && (
           <p className="text-xs text-brand-400/70">
             {(item.hashtags as string[]).map((h) => `#${h}`).join(' ')}
           </p>
