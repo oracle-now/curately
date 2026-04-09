@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { api } from '@/lib/api';
+import type { QueueItem } from '@curately/shared';
 
 const STATUS_COLORS: Record<string, string> = {
   queued:        'text-neutral-400 bg-neutral-800',
@@ -12,8 +13,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 interface Props {
-  item: any;
-  onUpdate: (item: any) => void;
+  item: QueueItem;
+  onUpdate: (item: QueueItem) => void;
   onRemove: (id: string) => void;
 }
 
@@ -31,7 +32,7 @@ export default function QueueCard({ item, onUpdate, onRemove }: Props) {
   async function handleGenerateCaption() {
     setGeneratingCaption(true);
     try {
-      const updated = await api.queue.generateCaption(item.id);
+      const updated = await api.queue.generateCaption(item.id) as QueueItem;
       onUpdate(updated);
       setCaptionDraft(updated.caption_text ?? '');
     } catch (err: any) {
@@ -45,7 +46,7 @@ export default function QueueCard({ item, onUpdate, onRemove }: Props) {
     const updated = await api.queue.update(item.id, {
       caption_text: captionDraft,
       status: 'caption_ready',
-    });
+    }) as QueueItem;
     onUpdate(updated);
     setEditingCaption(false);
   }
