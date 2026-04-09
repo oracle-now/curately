@@ -33,7 +33,7 @@ model InstagramAccount {
   accessToken     String    @map("access_token")
   tokenExpiresAt  DateTime  @map("token_expires_at")
   createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")  // added: required for token refresh logic
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   postJobs   PostJob[]
@@ -113,7 +113,7 @@ model QueueItem {
 
 model PostJob {
   id              String    @id @default(uuid())
-  queueItemId     String    @map("queue_item_id")
+  queueItemId     String    @unique @map("queue_item_id")  // unique: one active job per queue item
   igAccountId     String    @map("ig_account_id")
   scheduledAt     DateTime  @map("scheduled_at")
   lastAttemptAt   DateTime? @map("last_attempt_at")

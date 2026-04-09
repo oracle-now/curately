@@ -43,7 +43,10 @@ export async function queueRoutes(server: FastifyInstance) {
 
       const hasMore = items.length > take;
       const sliced = hasMore ? items.slice(0, take) : items;
-      return reply.send({ items: sliced, nextCursor: hasMore ? sliced[sliced.length - 1]?.id ?? null : null });
+      return reply.send({
+        items: sliced,
+        nextCursor: hasMore ? sliced[sliced.length - 1]?.id ?? null : null,
+      });
     }
   );
 
@@ -56,6 +59,21 @@ export async function queueRoutes(server: FastifyInstance) {
       where: { id: body.post_candidate_id, userId: request.user.id },
     });
     if (!candidate) return reply.code(404).send({ error: 'Candidate not found' });
+
+    // Guard: prevent duplicate queue entries for the same candidate
+    const existing = await server.prisma.queueItem.findFirst({
+      where: {
+        postCandidateId: body.post_candidate_id,
+        userId: request.user.id,
+        status: { notIn: ['posted', 'failed'] }, // allow re-queue only after terminal states
+      },
+    });
+    if (existing) {
+      return reply.code(409).send({
+        error: 'This post is already in your queue',
+        queue_item_id: existing.id,
+      });
+    }
 
     const item = await server.prisma.queueItem.create({
       data: {
@@ -114,7 +132,7 @@ export async function queueRoutes(server: FastifyInstance) {
     }
   );
 
-  // POST /api/v1/queue/:id/publish — enqueue a PostJob for publishing
+  // POST /api/v1/queue/:id/publish — create and enqueue a PostJob
   server.post<{ Params: { id: string } }>(
     '/queue/:id/publish',
     { preHandler: authenticate },
@@ -134,6 +152,22 @@ export async function queueRoutes(server: FastifyInstance) {
         return reply.code(400).send({ error: 'No Instagram account connected' });
       }
 
+      // Guard: prevent duplicate PostJob for the same QueueItem (race condition fix)
+      // DB-level @@unique([queueItemId]) is the hard stop; this is the soft guard for clean UX
+      const existingJob = await server.prisma.postJob.findFirst({
+        where: {
+          queueItemId: item.id,
+          status: { notIn: ['failed'] }, // allow re-publish only after failure
+        },
+      });
+      if (existingJob) {
+        return reply.code(409).send({
+          error: 'A publish job already exists for this queue item',
+          post_job_id: existingJob.id,
+          status: existingJob.status,
+        });
+      }
+
       const scheduledAt = item.scheduledAt ?? new Date();
 
       const job = await server.prisma.postJob.create({
@@ -150,7 +184,7 @@ export async function queueRoutes(server: FastifyInstance) {
         data: { status: 'scheduled' },
       });
 
-      // Enqueue to BullMQ publish worker
+      // Enqueue to BullMQ — delay fires the worker at scheduledAt
       const delay = Math.max(0, scheduledAt.getTime() - Date.now());
       await publishQueue.add('publish-job', { postJobId: job.id }, { delay });
 
