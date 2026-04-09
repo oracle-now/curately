@@ -140,3 +140,23 @@ model ApiRateLimit {
 
   @@map("api_rate_limits")
 }
+
+// ---------------------------------------------------------------------------
+// Memory Palace -- palace-structured memory for AI context persistence
+// Wing  = instagramAccountId (one wing per connected IG account)
+// Room  = memory domain (caption_style, source_prefs, curation_prefs, etc.)
+// Drawer = verbatim memory record -- never summarised, always exact
+// ---------------------------------------------------------------------------
+
+model MemoryDrawer {
+  id        String   @id @default(uuid())
+  wingId    String   @map("wing_id")   // instagramAccountId (foreign key to instagram_accounts)
+  room      String                      // room_caption_style | room_source_prefs | room_curation_prefs | room_schedule_prefs | room_decisions
+  content   String                      // verbatim text -- never summarised
+  tags      String[] @default([])       // e.g. ['hook', 'emoji', 'cta']
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([wingId, room])
+  @@index([wingId])
+  @@map("memory_drawers")
+}
